@@ -73,25 +73,28 @@ func FindBlogList(cardList []interface{}) []interface{} {
 	return blogList
 }
 
-func GetWBBlogList(keyword string, typeInt int, page int) {
+func GetWBBlogList(keyword string, typeInt int, pages int) {
 	t := utils.UrlEncode("=" + strconv.Itoa(typeInt))
 	q := utils.UrlEncode("=" + keyword)
 
-	url := fmt.Sprintf(WbSearchBlogUrl, t, q, page)
+	var blogList []interface{}
 
-	resp := http.Get(url, map[string]string{
-		"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-	}, nil)
+	for page := 1; page <= pages; page++ {
+		url := fmt.Sprintf(WbSearchBlogUrl, t, q, page)
 
-	jsn := resp.Json()
-	data := jsn["data"].(map[string]interface{})
-	cardList := data["cards"].([]interface{})
+		resp := http.Get(url, map[string]string{
+			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+		}, nil)
 
-	blogList := FindBlogList(cardList)
-	if len(blogList) > 0 {
-		dataframe.ToCSV(blogList, "./weibo/weibo_blog_page_"+strconv.Itoa(page)+".csv")
+		jsn := resp.Json()
+		data := jsn["data"].(map[string]interface{})
+		cardList := data["cards"].([]interface{})
+
+		blogList = append(blogList, FindBlogList(cardList)...)
 		fmt.Println("page " + strconv.Itoa(page) + " done")
-	} else {
-		fmt.Println("no blogs parsed on page " + strconv.Itoa(page))
+	}
+
+	if len(blogList) > 0 {
+		dataframe.ToCSV(blogList, "./weibo/weibo_blog_0_to_"+strconv.Itoa(pages)+".csv")
 	}
 }

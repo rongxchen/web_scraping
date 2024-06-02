@@ -1,7 +1,12 @@
 package main
 
-import "web_scraping/dataframe"
+import "web_scraping/weibo"
 
 func main() {
-	dataframe.ReadCSV()
+	weibo.GetWBBlogList("以色列", 1, 10)
+
+	//rows := dataframe.ReadCSV("./weibo/weibo_blog_page_0.csv")
+	//for i, row := range rows {
+	//	fmt.Println(i, row)
+	//}
 }
