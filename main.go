@@ -1,12 +1,24 @@
 package main
 
-import "web_scraping/weibo"
+import (
+	"fmt"
+	"web_scraping/repositories"
+)
 
 func main() {
-	weibo.GetWBBlogList("以色列", 1, 10)
+	//router := gin.Default()
+	//router.Use(cors.Default())
+	//
+	//// Define a route handler
+	//router.GET("/wb/users", api.GetWeiboUserList)
+	//router.GET("/wb/update", api.SyncWB)
+	//
+	//// Start the server
+	//exceptions.HandleError(router.Run())
 
-	//rows := dataframe.ReadCSV("./weibo/weibo_blog_page_0.csv")
-	//for i, row := range rows {
-	//	fmt.Println(i, row)
-	//}
+	br := repositories.BlogRepo{}
+	blogs := br.FindPage(1, 10)
+	for _, blog := range blogs {
+		fmt.Println(blog)
+	}
 }

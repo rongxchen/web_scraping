@@ -3,11 +3,16 @@ package weibo
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"web_scraping/dataframe"
 	"web_scraping/http"
+	"web_scraping/models"
+	repositories2 "web_scraping/repositories"
 	"web_scraping/utils"
 )
 
+var blogUserRepo = repositories2.BlogUserRepo{}
+var blogRepo = repositories2.BlogRepo{}
 var WbSearchBlogUrl = "https://m.weibo.cn/api/container/getIndex?containerid=100103type%s&q%s&page_type=searchall&page=%d"
 
 // FindBlogList helper function to extract blogs from response
@@ -29,24 +34,27 @@ func FindBlogList(cardList []interface{}) []interface{} {
 			}
 		}
 		// fetch card info
-		blog := Blog{}
+		blog := models.Blog{}
 		if mBlog, ok := card["mblog"].(map[string]interface{}); ok {
 			blog.MId = mBlog["mid"].(string)
 			blog.Text = mBlog["text"].(string)
 			pics := mBlog["pics"]
+			var pictureList []string
 			if pics != nil {
 				for _, p := range pics.([]interface{}) {
 					if pic, ok := p.(map[string]interface{}); ok {
-						blog.PictureList = append(blog.PictureList, pic["url"].(string))
+						pictureList = append(pictureList, pic["url"].(string))
 					}
 				}
 			}
+			picsString := strings.Join(pictureList, "|=|")
+			blog.PictureList = picsString
 			blog.LikeCount = int(mBlog["attitudes_count"].(float64))
 			blog.CommentCount = int(mBlog["comments_count"].(float64))
 			blog.RepostCount = int(mBlog["reposts_count"].(float64))
 			user := mBlog["user"].(map[string]interface{})
-			blogUser := BlogUser{
-				Id:             int(user["id"].(float64)),
+			blogUser := models.BlogUser{
+				UserId:         int(user["id"].(float64)),
 				Username:       user["screen_name"].(string),
 				Description:    user["description"].(string),
 				FollowCount:    user["follow_count"].(float64),
@@ -56,7 +64,8 @@ func FindBlogList(cardList []interface{}) []interface{} {
 				Verified:       user["verified"].(bool),
 				VerifiedReason: user["verified_reason"].(string),
 			}
-			blog.BlogUser = blogUser
+			blogUserRepo.CreateIfNotExists(blogUser)
+			blog.BlogUserId = blogUser.UserId
 			blog.Source = mBlog["source"].(string)
 			if c, ok := mBlog["status_city"].(string); ok {
 				blog.StatusCity = c
@@ -65,6 +74,7 @@ func FindBlogList(cardList []interface{}) []interface{} {
 				blog.StatusCountry = c
 			}
 			blog.CreatedAt = mBlog["created_at"].(string)
+			blogRepo.CreateIfNotExists(blog)
 		} else {
 			continue
 		}
